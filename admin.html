@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notion Website Admin</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      color: var(--color-text-default, #333);
+      background-color: var(--color-bg-default, #fff);
+      max-width: var(--container-width, 1200px);
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .admin-panel {
+      margin-top: 40px;
+    }
+    .card {
+      border: 1px solid var(--color-border-default, #eaeaea);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .button {
+      display: inline-block;
+      background-color: var(--primary-color, #333);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 4px;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      font-size: 16px;
+    }
+    .button:hover {
+      opacity: 0.9;
+    }
+    .pages-list, .databases-list {
+      margin-top: 20px;
+    }
+    .page-item, .database-item {
+      padding: 10px;
+      border-bottom: 1px solid var(--color-border-default, #eaeaea);
+    }
+    .loading {
+      display: inline-block;
+      margin-left: 10px;
+    }
+    .status {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .status.success {
+      background-color: #e6f7e6;
+      color: #2e7d32;
+    }
+    .status.error {
+      background-color: #fdecea;
+      color: #c62828;
+    }
+  </style>
+</head>
+<body>
+  <div class="super-navbar">
+    <div class="super-navbar__logo">
+      <a href="/">My Notion Website</a>
+    </div>
+    <div class="super-navbar__item-list">
+      <a href="/" class="super-navbar__item">Home</a>
+      <a href="/admin.html" class="super-navbar__item">Admin</a>
+    </div>
+  </div>
+
+  <div class="notion-header">
+    <h1 class="notion-header__title">Website Admin</h1>
+  </div>
+
+  <div class="admin-panel">
+    <div class="card">
+      <h2>Generate Website</h2>
+      <p>Click the button below to generate your website from Notion content.</p>
+      <button id="generateButton" class="button">Generate Website</button>
+      <span id="generateStatus" class="loading"></span>
+      <div id="generateResult" class="status" style="display: none;"></div>
+    </div>
+
+    <div class="card">
+      <h2>Notion Pages</h2>
+      <p>These are the pages available from your Notion workspace:</p>
+      <button id="fetchPagesButton" class="button">Fetch Pages</button>
+      <span id="pagesStatus" class="loading"></span>
+      <div class="pages-list" id="pagesList"></div>
+    </div>
+
+    <div class="card">
+      <h2>Notion Databases</h2>
+      <p>These are the databases available from your Notion workspace:</p>
+      <button id="fetchDatabasesButton" class="button">Fetch Databases</button>
+      <span id="databasesStatus" class="loading"></span>
+      <div class="databases-list" id="databasesList"></div>
+    </div>
+  </div>
+
+  <script>
+    // Function to fetch pages from the API
+    async function fetchPages() {
+      const pagesStatus = document.getElementById('pagesStatus');
+      const pagesList = document.getElementById('pagesList');
+      
+      pagesStatus.textContent = 'Loading...';
+      
+      try {
+        const response = await fetch('/api/pages');
+        const data = await response.json();
+        
+        pagesStatus.textContent = '';
+        pagesList.innerHTML = '';
+        
+        if (data.length === 0) {
+          pagesList.innerHTML = '<p>No pages found. Make sure your integration has access to pages in your Notion workspace.</p>';
+          return;
+        }
+        
+        data.forEach(page => {
+          let title = 'Untitled';
+          if (page.properties && page.properties.title) {
+            const titleProperty = page.properties.title;
+            if (titleProperty.title && titleProperty.title.length > 0) {
+              title = titleProperty.title[0].plain_text;
+            }
+          }
+          
+          const pageItem = document.createElement('div');
+          pageItem.className = 'page-item';
+          pageItem.innerHTML = `
+            <strong>${title}</strong>
+            <div>ID: ${page.id}</div>
+          `;
+          pagesList.appendChild(pageItem);
+        });
+      } catch (error) {
+        pagesStatus.textContent = '';
+        pagesList.innerHTML = `<p class="error">Error fetching pages: ${error.message}</p>`;
+      }
+    }
+    
+    // Function to fetch databases from the API
+    async function fetchDatabases() {
+      const databasesStatus = document.getElementById('databasesStatus');
+      const databasesList = document.getElementById('databasesList');
+      
+      databasesStatus.textContent = 'Loading...';
+      
+      try {
+        const response = await fetch('/api/databases');
+        const data = await response.json();
+        
+        databasesStatus.textContent = '';
+        databasesList.innerHTML = '';
+        
+        if (data.length === 0) {
+          databasesList.innerHTML = '<p>No databases found. Make sure your integration has access to databases in your Notion workspace.</p>';
+          return;
+        }
+        
+        data.forEach(database => {
+          let title = 'Untitled';
+          if (database.title && database.title.length > 0) {
+            title = database.title[0].plain_text;
+          }
+          
+          const databaseItem = document.createElement('div');
+          databaseItem.className = 'database-item';
+          databaseItem.innerHTML = `
+            <strong>${title}</strong>
+            <div>ID: ${database.id}</div>
+          `;
+          databasesList.appendChild(databaseItem);
+        });
+      } catch (error) {
+        databasesStatus.textContent = '';
+        databasesList.innerHTML = `<p class="error">Error fetching databases: ${error.message}</p>`;
+      }
+    }
+    
+    // Function to generate the website
+    async function generateWebsite() {
+      const generateStatus = document.getElementById('generateStatus');
+      const generateResult = document.getElementById('generateResult');
+      
+      generateStatus.textContent = 'Generating...';
+      generateResult.style.display = 'none';
+      
+      try {
+        const response = await fetch('/api/generate');
+        const data = await response.json();
+        
+        generateStatus.textContent = '';
+        generateResult.style.display = 'block';
+        
+        if (data.success) {
+          generateResult.className = 'status success';
+          generateResult.textContent = 'Website generated successfully! Refresh the home page to see changes.';
+        } else {
+          generateResult.className = 'status error';
+          generateResult.textContent = `Error: ${data.error}`;
+        }
+      } catch (error) {
+        generateStatus.textContent = '';
+        generateResult.style.display = 'block';
+        generateResult.className = 'status error';
+        generateResult.textContent = `Error generating website: ${error.message}`;
+      }
+    }
+    
+    // Add event listeners
+    document.getElementById('fetchPagesButton').addEventListener('click', fetchPages);
+    document.getElementById('fetchDatabasesButton').addEventListener('click', fetchDatabases);
+    document.getElementById('generateButton').addEventListener('click', generateWebsite);
+  </script>
+</body>
+</html>
