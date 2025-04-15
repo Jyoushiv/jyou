@@ -10,10 +10,10 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 // Hardcoded configuration
-const GITHUB_USERNAME = 'username'; // Replace with actual GitHub username
-const GITHUB_REPO = 'username.github.io'; // Replace with actual GitHub repo name
-const GITHUB_EMAIL = 'email@example.com'; // Replace with actual GitHub email
-const GITHUB_NAME = 'Your Name'; // Replace with actual GitHub name
+const GITHUB_USERNAME = 'jyoushiv'; // Replace with actual GitHub username
+const GITHUB_REPO = 'dire.github.io'; // Replace with actual GitHub repo name
+const GITHUB_EMAIL = 'jyoushivraj188@gmail.com'; // Replace with actual GitHub email
+const GITHUB_NAME = 'jyoushiv'; // Replace with actual GitHub name
 
 // Paths
 const PUBLIC_DIR = path.join(__dirname, 'public');
